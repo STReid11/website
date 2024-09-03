@@ -1,0 +1,25 @@
+*{text-align: center;}
+
+
+
+
+h1{font-size: 50px;}
+
+body {
+  transition: background-color 0.5s ease;
+  }
+button {
+
+  background-color: #ffffff; 
+  color: black;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #e1dfdf; }
+dialog{font-size:40px;}

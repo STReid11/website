@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1> Pratcice </h1>
+
+
+
+
+
+
+ <button style="position: fixed; bottom: 10px; left: 10px;" onclick="changeBackgroundColor()"><b>Change Background Colour</b></button>
+  <script>
+  function changeBackgroundColor() {
+    let colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink"];
+    let randomIndex = Math.floor(Math.random() * colors.length);
+    document.body.style.backgroundColor = colors[randomIndex];
+  }
+  </script>
+
+ 
+    <dialog> <p> welcome to this webiste </p></dialog>
+<button onclick="openMe()">Click</button>
+    <script> 
+    function openMe() {document.querySelector('dialog').showModal() }
+    </script>
+</body>
+
+</html>
