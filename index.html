@@ -177,7 +177,7 @@
         var draggableMarker = L.marker([55.8642, -4.2518], {
             icon: customIcon,
             draggable: true,
-            title: 'Drag me around!'
+            title: 'Drag me & Jeet me!'
         }).addTo(map);
         draggableMarker.bindPopup('<b>Draggable Icon!</b><br>Grab me and move me around the map!');
 
@@ -197,7 +197,7 @@
             const pos = e.target.getLatLng();
             draggableMarker.bindPopup('<b>Finding address...</b>').openPopup();
             getAddress(pos.lat, pos.lng, (address, success) => {
-                draggableMarker.bindPopup(`<b>You moved to:</b><br>${address}`).openPopup();
+                draggableMarker.bindPopup(`<b> Chibis are now at:</b><br>${address}`).openPopup();
             });
         });
 
