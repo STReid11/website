@@ -1,271 +1,396 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
-    <title>Interactive Map</title>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
-
-    <style>
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            left: 0;
-        }
-
-        .controls-panel {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            font-family: Arial, sans-serif;
-            max-width: 250px;
-        }
-
-        .controls-panel h3 {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            color: #333;
-        }
-
-        .controls-panel ul {
-            margin: 0;
-            padding-left: 20px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .controls-panel li {
-            margin-bottom: 5px;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 5px;
-            right: 8px;
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .close-btn:hover {
-            color: #000;
-        }
-
-        .leaflet-control-help {
-            background: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .leaflet-control-help:hover {
-            background: #f4f4f4;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="controls-panel" id="controlsPanel">
-        <button class="close-btn" onclick="toggleControlPanel()">×</button>
-        <h3>🎮 Interactive Controls</h3>
-        <ul>
-            <li><b>Drag</b> the custom icon around!</li>
-            <li><b>Shift+Click</b> to add markers</li>
-            <li><b>Right-click</b> markers to remove</li>
-            <li><b>Double-click</b> to measure distance</li>
-            <li>Press <b>C</b> to clear measurements</li>
-        </ul>
-    </div>
-
-    <div id="map"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
-    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-
-    <script>
-        function toggleControlPanel() {
-            var panel = document.getElementById('controlsPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // Initialize map
-        var map = L.map('map', { center: [55.8642, -4.2518], zoom: 13 });
-        map.doubleClickZoom.disable();
-
-        // Add OSM tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: 'Data © <a href="http://openstreetmap.org">OpenStreetMap</a>',
-            maxZoom: 18
-        }).addTo(map);
-
-        // Help button
-        L.Control.HelpButton = L.Control.extend({
-            onAdd: function (map) {
-                var btn = L.DomUtil.create('div', 'leaflet-control-help');
-                btn.innerHTML = '?';
-                btn.title = 'Show/Hide Controls';
-                btn.onclick = toggleControlPanel;
-                return btn;
-            }
-        });
-        new L.Control.HelpButton({ position: 'topright' }).addTo(map);
-
-        // Predefined markers
-        const predefinedMarkers = [
-            { coords: [55.8985, -3.5556], name: "Livingston North Station" },
-            { coords: [55.862, -4.2518], name: "Glasgow Queen Street Station" },
-            { coords: [55.8618, -4.2535], name: "Kloud Coffee" },
-            { coords: [55.8629, -4.2527], name: "Buchanan Galleries" },
-            { coords: [55.8588, -4.2475], name: "Modern Love" },
-            { coords: [55.8758, -4.2935], name: "Florist Flat Flat Files" },
-            { coords: [55.875, -4.295], name: "Ashton Lane (West End)" },
-            { coords: [55.8751, -4.2952], name: "Oran Mór / Ubiquitous Chip (Lunch Option)" },
-            { coords: [55.8577, -4.2477], name: "Forbidden Planet" },
-            { coords: [55.857, -4.2541], name: "St. Enoch Centre (Miniso & Ilahui)" },
-            { coords: [55.8613, -4.2508], name: "George Square Christmas Market" }
-        ];
-
-        predefinedMarkers.forEach(m => {
-            const marker = L.marker(m.coords).addTo(map);
-            marker.bindPopup(m.name);
-            marker.bindTooltip(m.name, { sticky: true });
-        });
-
-        // Polyline route connecting main points
-        const routeLine = L.polyline(predefinedMarkers.map(m => m.coords), {
-            color: 'purple',
-            weight: 3,
-            opacity: 0.8
-        }).addTo(map);
-
-        // Draggable icon
-        var customIcon = L.icon({
-            iconUrl: 'icon.png',
-            iconSize: [50, 50],
-            iconAnchor: [25, 50],
-            popupAnchor: [0, -50]
-        });
-
-        var draggableMarker = L.marker([55.8642, -4.2518], {
-            icon: customIcon,
-            draggable: true,
-            title: 'Drag me & Jeet me!'
-        }).addTo(map);
-        draggableMarker.bindPopup('<b>Draggable Icon!</b><br>Grab me and move me around the map!');
-
-        function getAddress(lat, lng, callback) {
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
-                headers: { 'User-Agent': 'InteractiveMapApp/1.0' }
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.display_name) callback(data.display_name, true);
-                    else callback(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, false);
-                })
-                .catch(() => callback(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, false));
-        }
-
-        draggableMarker.on('dragend', e => {
-            const pos = e.target.getLatLng();
-            draggableMarker.bindPopup('<b>Finding address...</b>').openPopup();
-            getAddress(pos.lat, pos.lng, (address, success) => {
-                draggableMarker.bindPopup(`<b> Chibis are now at:</b><br>${address}`).openPopup();
-            });
-        });
-
-        // Shift+click markers
-        let clickMarkers = [];
-        map.on('click', function (e) {
-            if (!e.originalEvent.shiftKey) return;
-
-            var newMarker = L.marker(e.latlng, {
-                draggable: true,
-                icon: L.icon({
-                    iconUrl: 'icon.png',
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 40],
-                    popupAnchor: [0, -40]
-                })
-            }).addTo(map);
-
-            newMarker.bindPopup('<b>Finding address...</b><br><i>Right-click to remove</i>');
-
-            getAddress(e.latlng.lat, e.latlng.lng, function (address) {
-                newMarker.bindPopup('<b>Location:</b><br>' + address + '<br><i>Right-click to remove</i>');
-            });
-
-            newMarker.on('dragend', function (dragEvent) {
-                const pos = dragEvent.target.getLatLng();
-                getAddress(pos.lat, pos.lng, function (address) {
-                    newMarker.bindPopup('<b>Location:</b><br>' + address + '<br><i>Right-click to remove</i>').openPopup();
-                });
-            });
-
-            newMarker.on('contextmenu', function (ev) {
-                map.removeLayer(newMarker);
-                clickMarkers = clickMarkers.filter(m => m !== newMarker);
-            });
-
-            clickMarkers.push(newMarker);
-        });
-
-        // Double-click to measure distance
-        let measurementLine = null;
-        let measurementPoints = [];
-        map.on('dblclick', function (e) {
-            measurementPoints.push(e.latlng);
-            if (measurementLine) map.removeLayer(measurementLine);
-            if (measurementPoints.length >= 2) {
-                measurementLine = L.polyline(measurementPoints, {
-                    color: 'red',
-                    weight: 3,
-                    dashArray: '10, 5'
-                }).addTo(map);
-
-                let totalDistance = 0;
-                for (let i = 0; i < measurementPoints.length - 1; i++)
-                    totalDistance += measurementPoints[i].distanceTo(measurementPoints[i + 1]);
-
-                measurementLine.bindPopup('Distance: ' + (totalDistance / 1000).toFixed(2) + ' km<br>Press C to clear').openPopup();
-            }
-        });
-
-        document.addEventListener('keydown', function (e) {
-            if (e.key.toLowerCase() === 'c') {
-                if (measurementLine) map.removeLayer(measurementLine);
-                measurementLine = null;
-                measurementPoints = [];
-            }
-        });
-    </script>
-</body>
-
-</html>
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/index.html b/index.html
+index 248edc1a7447134cbfb00a6670069bb42879baa2..d7493af0f75c42f502a1dbaecf4b9117ffbbca29 100644
+--- a/index.html
++++ b/index.html
+@@ -1,271 +1,123 @@
+ <!DOCTYPE html>
+-<html>
+-
++<html lang="en">
+ <head>
+-    <meta charset="UTF-8" />
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+-
+-    <title>Interactive Map</title>
+-
+-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css" />
+-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+-    <link rel="stylesheet"
+-        href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+-
+-    <style>
+-        html, body {
+-            width: 100%;
+-            height: 100%;
+-            margin: 0;
+-            padding: 0;
+-        }
+-
+-        #map {
+-            position: absolute;
+-            top: 0;
+-            bottom: 0;
+-            right: 0;
+-            left: 0;
+-        }
+-
+-        .controls-panel {
+-            position: absolute;
+-            top: 10px;
+-            right: 10px;
+-            background: white;
+-            padding: 15px;
+-            border-radius: 8px;
+-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+-            z-index: 1000;
+-            font-family: Arial, sans-serif;
+-            max-width: 250px;
+-        }
+-
+-        .controls-panel h3 {
+-            margin: 0 0 10px 0;
+-            font-size: 16px;
+-            color: #333;
+-        }
+-
+-        .controls-panel ul {
+-            margin: 0;
+-            padding-left: 20px;
+-            font-size: 13px;
+-            line-height: 1.6;
+-        }
+-
+-        .controls-panel li {
+-            margin-bottom: 5px;
+-        }
+-
+-        .close-btn {
+-            position: absolute;
+-            top: 5px;
+-            right: 8px;
+-            background: none;
+-            border: none;
+-            font-size: 18px;
+-            cursor: pointer;
+-            color: #666;
+-        }
+-
+-        .close-btn:hover {
+-            color: #000;
+-        }
+-
+-        .leaflet-control-help {
+-            background: white;
+-            padding: 5px 10px;
+-            border-radius: 4px;
+-            cursor: pointer;
+-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+-            font-size: 18px;
+-            font-weight: bold;
+-        }
+-
+-        .leaflet-control-help:hover {
+-            background: #f4f4f4;
+-        }
+-    </style>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>PrimeFade Barbershop</title>
++  <link rel="preconnect" href="https://fonts.googleapis.com" />
++  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
++  <link rel="stylesheet" href="style.css" />
+ </head>
+-
+ <body>
+-    <div class="controls-panel" id="controlsPanel">
+-        <button class="close-btn" onclick="toggleControlPanel()">×</button>
+-        <h3>🎮 Interactive Controls</h3>
+-        <ul>
+-            <li><b>Drag</b> the custom icon around!</li>
+-            <li><b>Shift+Click</b> to add markers</li>
+-            <li><b>Right-click</b> markers to remove</li>
+-            <li><b>Double-click</b> to measure distance</li>
+-            <li>Press <b>C</b> to clear measurements</li>
+-        </ul>
++  <header class="site-header">
++    <nav class="container nav">
++      <a class="brand" href="#home">PrimeFade</a>
++      <ul class="nav-links">
++        <li><a href="#services">Services</a></li>
++        <li><a href="#about">About</a></li>
++        <li><a href="#testimonials">Reviews</a></li>
++        <li><a href="#contact">Contact</a></li>
++      </ul>
++      <a class="btn btn-small" href="#booking">Book Now</a>
++    </nav>
++  </header>
++
++  <main id="home">
++    <section class="hero">
++      <div class="container hero-content">
++        <p class="eyebrow">Award-Winning Grooming Studio</p>
++        <h1>Precision Cuts. Clean Fades. Professional Style.</h1>
++        <p class="lead">Premium barbering for modern gentlemen. Walk out sharp, confident, and camera-ready every time.</p>
++        <div class="hero-actions">
++          <a class="btn" href="#booking">Book Appointment</a>
++          <a class="btn btn-ghost" href="#services">View Services</a>
++        </div>
++      </div>
++    </section>
++
++    <section id="services" class="section">
++      <div class="container">
++        <h2>Services</h2>
++        <p class="section-copy">Tailored treatments with expert attention to detail.</p>
++        <div class="grid cards">
++          <article class="card">
++            <h3>Classic Haircut</h3>
++            <p>Clean, structured cut with consultation and style finish.</p>
++            <span>$35 · 30 min</span>
++          </article>
++          <article class="card">
++            <h3>Skin Fade</h3>
++            <p>Seamless gradient fade executed with precision detailing.</p>
++            <span>$45 · 40 min</span>
++          </article>
++          <article class="card">
++            <h3>Beard Sculpt</h3>
++            <p>Shape, line-up, and conditioning for a polished beard profile.</p>
++            <span>$25 · 20 min</span>
++          </article>
++          <article class="card">
++            <h3>Signature Package</h3>
++            <p>Haircut, beard grooming, hot towel, and styling product finish.</p>
++            <span>$65 · 60 min</span>
++          </article>
++        </div>
++      </div>
++    </section>
++
++    <section id="about" class="section section-dark">
++      <div class="container two-col">
++        <div>
++          <h2>About PrimeFade</h2>
++          <p>We combine old-school barber craftsmanship with modern style culture. Every appointment starts with consultation and ends with refined, wearable results.</p>
++          <ul class="list">
++            <li>Licensed and experienced barbers</li>
++            <li>Premium grooming products</li>
++            <li>Sanitized tools and modern studio experience</li>
++          </ul>
++        </div>
++        <div class="stats">
++          <div><strong>10+</strong><span>Years Experience</span></div>
++          <div><strong>4.9★</strong><span>Average Rating</span></div>
++          <div><strong>3k+</strong><span>Satisfied Clients</span></div>
++        </div>
++      </div>
++    </section>
++
++    <section id="testimonials" class="section">
++      <div class="container">
++        <h2>Client Reviews</h2>
++        <div class="grid reviews">
++          <blockquote>
++            “Best fade in the city. Professional service and great attention to detail.”
++            <cite>— Marcus L.</cite>
++          </blockquote>
++          <blockquote>
++            “Super clean shop, friendly staff, and consistent results every visit.”
++            <cite>— Daniel R.</cite>
++          </blockquote>
++          <blockquote>
++            “Booked once and never went anywhere else. Highly recommended.”
++            <cite>— Aaron T.</cite>
++          </blockquote>
++        </div>
++      </div>
++    </section>
++
++    <section id="booking" class="section section-accent">
++      <div class="container booking">
++        <h2>Book Your Next Cut</h2>
++        <p>Open 7 days · 9:00 AM – 8:00 PM</p>
++        <a class="btn btn-light" href="mailto:bookings@primefade.com">bookings@primefade.com</a>
++      </div>
++    </section>
++  </main>
++
++  <footer id="contact" class="site-footer">
++    <div class="container footer-content">
++      <p>PrimeFade Barbershop · 120 Main Street · (555) 012-3456</p>
++      <p>© 2026 PrimeFade. All rights reserved.</p>
+     </div>
+-
+-    <div id="map"></div>
+-
+-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
+-    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+-
+-    <script>
+-        function toggleControlPanel() {
+-            var panel = document.getElementById('controlsPanel');
+-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+-        }
+-
+-        // Initialize map
+-        var map = L.map('map', { center: [55.8642, -4.2518], zoom: 13 });
+-        map.doubleClickZoom.disable();
+-
+-        // Add OSM tiles
+-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+-            attribution: 'Data © <a href="http://openstreetmap.org">OpenStreetMap</a>',
+-            maxZoom: 18
+-        }).addTo(map);
+-
+-        // Help button
+-        L.Control.HelpButton = L.Control.extend({
+-            onAdd: function (map) {
+-                var btn = L.DomUtil.create('div', 'leaflet-control-help');
+-                btn.innerHTML = '?';
+-                btn.title = 'Show/Hide Controls';
+-                btn.onclick = toggleControlPanel;
+-                return btn;
+-            }
+-        });
+-        new L.Control.HelpButton({ position: 'topright' }).addTo(map);
+-
+-        // Predefined markers
+-        const predefinedMarkers = [
+-            { coords: [55.8985, -3.5556], name: "Livingston North Station" },
+-            { coords: [55.862, -4.2518], name: "Glasgow Queen Street Station" },
+-            { coords: [55.8618, -4.2535], name: "Kloud Coffee" },
+-            { coords: [55.8629, -4.2527], name: "Buchanan Galleries" },
+-            { coords: [55.8588, -4.2475], name: "Modern Love" },
+-            { coords: [55.8758, -4.2935], name: "Florist Flat Flat Files" },
+-            { coords: [55.875, -4.295], name: "Ashton Lane (West End)" },
+-            { coords: [55.8751, -4.2952], name: "Oran Mór / Ubiquitous Chip (Lunch Option)" },
+-            { coords: [55.8577, -4.2477], name: "Forbidden Planet" },
+-            { coords: [55.857, -4.2541], name: "St. Enoch Centre (Miniso & Ilahui)" },
+-            { coords: [55.8613, -4.2508], name: "George Square Christmas Market" }
+-        ];
+-
+-        predefinedMarkers.forEach(m => {
+-            const marker = L.marker(m.coords).addTo(map);
+-            marker.bindPopup(m.name);
+-            marker.bindTooltip(m.name, { sticky: true });
+-        });
+-
+-        // Polyline route connecting main points
+-        const routeLine = L.polyline(predefinedMarkers.map(m => m.coords), {
+-            color: 'purple',
+-            weight: 3,
+-            opacity: 0.8
+-        }).addTo(map);
+-
+-        // Draggable icon
+-        var customIcon = L.icon({
+-            iconUrl: 'icon.png',
+-            iconSize: [50, 50],
+-            iconAnchor: [25, 50],
+-            popupAnchor: [0, -50]
+-        });
+-
+-        var draggableMarker = L.marker([55.8642, -4.2518], {
+-            icon: customIcon,
+-            draggable: true,
+-            title: 'Drag me & Jeet me!'
+-        }).addTo(map);
+-        draggableMarker.bindPopup('<b>Draggable Icon!</b><br>Grab me and move me around the map!');
+-
+-        function getAddress(lat, lng, callback) {
+-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+-                headers: { 'User-Agent': 'InteractiveMapApp/1.0' }
+-            })
+-                .then(res => res.json())
+-                .then(data => {
+-                    if (data.display_name) callback(data.display_name, true);
+-                    else callback(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, false);
+-                })
+-                .catch(() => callback(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`, false));
+-        }
+-
+-        draggableMarker.on('dragend', e => {
+-            const pos = e.target.getLatLng();
+-            draggableMarker.bindPopup('<b>Finding address...</b>').openPopup();
+-            getAddress(pos.lat, pos.lng, (address, success) => {
+-                draggableMarker.bindPopup(`<b> Chibis are now at:</b><br>${address}`).openPopup();
+-            });
+-        });
+-
+-        // Shift+click markers
+-        let clickMarkers = [];
+-        map.on('click', function (e) {
+-            if (!e.originalEvent.shiftKey) return;
+-
+-            var newMarker = L.marker(e.latlng, {
+-                draggable: true,
+-                icon: L.icon({
+-                    iconUrl: 'icon.png',
+-                    iconSize: [40, 40],
+-                    iconAnchor: [20, 40],
+-                    popupAnchor: [0, -40]
+-                })
+-            }).addTo(map);
+-
+-            newMarker.bindPopup('<b>Finding address...</b><br><i>Right-click to remove</i>');
+-
+-            getAddress(e.latlng.lat, e.latlng.lng, function (address) {
+-                newMarker.bindPopup('<b>Location:</b><br>' + address + '<br><i>Right-click to remove</i>');
+-            });
+-
+-            newMarker.on('dragend', function (dragEvent) {
+-                const pos = dragEvent.target.getLatLng();
+-                getAddress(pos.lat, pos.lng, function (address) {
+-                    newMarker.bindPopup('<b>Location:</b><br>' + address + '<br><i>Right-click to remove</i>').openPopup();
+-                });
+-            });
+-
+-            newMarker.on('contextmenu', function (ev) {
+-                map.removeLayer(newMarker);
+-                clickMarkers = clickMarkers.filter(m => m !== newMarker);
+-            });
+-
+-            clickMarkers.push(newMarker);
+-        });
+-
+-        // Double-click to measure distance
+-        let measurementLine = null;
+-        let measurementPoints = [];
+-        map.on('dblclick', function (e) {
+-            measurementPoints.push(e.latlng);
+-            if (measurementLine) map.removeLayer(measurementLine);
+-            if (measurementPoints.length >= 2) {
+-                measurementLine = L.polyline(measurementPoints, {
+-                    color: 'red',
+-                    weight: 3,
+-                    dashArray: '10, 5'
+-                }).addTo(map);
+-
+-                let totalDistance = 0;
+-                for (let i = 0; i < measurementPoints.length - 1; i++)
+-                    totalDistance += measurementPoints[i].distanceTo(measurementPoints[i + 1]);
+-
+-                measurementLine.bindPopup('Distance: ' + (totalDistance / 1000).toFixed(2) + ' km<br>Press C to clear').openPopup();
+-            }
+-        });
+-
+-        document.addEventListener('keydown', function (e) {
+-            if (e.key.toLowerCase() === 'c') {
+-                if (measurementLine) map.removeLayer(measurementLine);
+-                measurementLine = null;
+-                measurementPoints = [];
+-            }
+-        });
+-    </script>
++  </footer>
+ </body>
+-
+ </html>
+ 
+EOF
+)
